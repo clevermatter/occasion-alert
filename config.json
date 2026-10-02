@@ -19,7 +19,7 @@
     "brandstof": "2"
   },
   "gaspedaal": {
-    "aan": true,
+    "aan": false,
     "pad": "renault/clio",
     "trefwoord": "e-tech"
   },
