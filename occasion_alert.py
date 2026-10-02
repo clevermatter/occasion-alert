@@ -1,4 +1,4 @@
-"""Occasion-alert: zoekt op AutoScout24, Gaspedaal (en optioneel Marktplaats)
+"""Occasion-alert: zoekt op AutoScout24, viaBOVAG, Gaspedaal en Marktplaats
 naar occasions en meldt nieuwe advertenties en prijsdalingen via Telegram.
 
 Dezelfde auto op meerdere sites (zelfde kilometerstand + bouwjaar) wordt
@@ -66,8 +66,9 @@ def pk(tekst):
 
 
 def advertentie(bron, id_, titel, prijs, bouwjaar, km, plaats, afstand_km, url, extra="",
-                versie=None, transmissie=None, vermogen_pk=None, verkoper=None):
+                versie=None, transmissie=None, vermogen_pk=None, verkoper=None, garantie=None):
     return {
+        "garantie": garantie,
         "versie": " ".join((versie or "").split()) or None,
         "transmissie": transmissie or None,
         "vermogen_pk": vermogen_pk,
@@ -134,6 +135,80 @@ def autoscout24(cfg):
                     "Particulier" if (l.get("seller") or {}).get("type") == "Private"
                     else (l.get("seller") or {}).get("companyName")
                 ),
+            )
+        )
+    return ads
+
+
+# -------------------------------------------------------------------- viaBOVAG
+
+BOVAG_PRIJZEN = [1500, 3000, 4500, 5000, 6000, 7000, 8000, 9000, 10000, 12500, 15000, 17500,
+                 20000, 25000, 30000, 40000, 50000, 60000, 70000, 80000, 90000, 100000, 125000]
+BOVAG_KM = [2500, 5000, 10000, 15000, 20000, 25000, 30000, 35000, 40000, 45000, 50000, 60000,
+            70000, 80000, 90000, 100000, 110000, 120000, 130000, 140000, 150000, 175000, 200000,
+            250000, 300000]
+BOVAG_AFSTAND = [5, 10, 20, 30, 40, 50, 100, 200, 300]
+BOVAG_GARANTIE = {"DrieMaanden": 3, "ZesMaanden": 6, "TwaalfMaanden": 12,
+                  "AchttienMaanden": 18, "VierentwintigMaanden": 24}
+
+
+def kleinste_optie(opties, waarde):
+    """viaBOVAG kent alleen vaste filterwaarden: neem de eerstvolgende (de bot filtert zelf precies)."""
+    return next((o for o in opties if o >= waarde), opties[-1])
+
+
+def viabovag(cfg):
+    b = cfg["viabovag"]
+    delen = [b["pad"], f"prijs-tot-en-met-{kleinste_optie(BOVAG_PRIJZEN, cfg['max_prijs_euro'])}"]
+    if cfg.get("max_kilometerstand"):
+        delen.append(f"kilometerstand-tot-en-met-{kleinste_optie(BOVAG_KM, cfg['max_kilometerstand'])}")
+    delen.append(f"plaats-{b['plaats']}/afstand-{kleinste_optie(BOVAG_AFSTAND, cfg['straal_km'])}")
+    if b.get("brandstof"):
+        delen.append(b["brandstof"])
+    pagina = haal("https://www.viabovag.nl/auto/" + "/".join(delen))
+
+    # Next.js stuurt de data mee als tekststukjes in self.__next_f.push([1,"..."])
+    stukken = re.findall(r'self\.__next_f\.push\(\[1,"((?:[^"\\]|\\.)*)"\]\)', pagina)
+    flight = "".join(json.loads(f'"{x}"') for x in stukken)
+    regel = next((r for r in flight.split("\n") if re.search(r'"searchResults":\s*\{\s*"results"', r)), None)
+    if regel is None:
+        raise RuntimeError("viaBOVAG: geen zoekresultaten in de pagina (geblokkeerd of nieuw formaat)")
+
+    def zoek(o):
+        if isinstance(o, dict):
+            if isinstance(o.get("searchResults"), dict):
+                return o["searchResults"]
+            o = list(o.values())
+        if isinstance(o, list):
+            for x in o:
+                r = zoek(x)
+                if r:
+                    return r
+        return None
+
+    resultaten = (zoek(json.loads(regel.split(":", 1)[1])) or {}).get("results", [])
+    ads = []
+    for r in resultaten:
+        if r.get("isAdboosted"):  # betaalde advertentie, valt vaak buiten je zoekgebied
+            continue
+        v, bedrijf = r.get("vehicle") or {}, r.get("company") or {}
+        maanden = BOVAG_GARANTIE.get(v.get("bovagWarranty") or "")
+        ads.append(
+            advertentie(
+                "viaBOVAG",
+                r.get("id"),
+                r.get("title"),
+                r.get("price"),
+                v.get("year"),
+                v.get("mileage"),
+                stad(bedrijf.get("city")),
+                None,
+                r.get("url"),
+                extra=v.get("fuelType", ""),
+                versie=v.get("commercialVersion"),
+                transmissie=v.get("transmissionType"),
+                verkoper=bedrijf.get("name"),
+                garantie=f"BOVAG {maanden} mnd garantie" if maanden else None,
             )
         )
     return ads
@@ -238,6 +313,7 @@ def marktplaats(cfg):
 
 BRONNEN = {  # config-sleutel: (weergavenaam, functie)
     "autoscout24": ("AutoScout24", autoscout24),
+    "viabovag": ("viaBOVAG", viabovag),
     "gaspedaal": ("Gaspedaal", gaspedaal),
     "marktplaats": ("Marktplaats", marktplaats),
 }
@@ -278,7 +354,7 @@ def voeg_samen(ads):
             autos[sleutel] = {**ad, "sleutel": sleutel, "links": {ad["bron"]: ad["url"]}}
             continue
         auto["links"].setdefault(ad["bron"], ad["url"])
-        for veld in ("afstand_km", "versie", "transmissie", "vermogen_pk", "verkoper"):
+        for veld in ("afstand_km", "versie", "transmissie", "vermogen_pk", "verkoper", "garantie"):
             if auto.get(veld) is None and ad.get(veld) is not None:
                 auto[veld] = ad[veld]
         if ad["prijs"] < auto["prijs"]:  # laagste prijs leidend
@@ -307,6 +383,8 @@ def techniek(auto):
         delen.append(auto["transmissie"])
     if auto.get("vermogen_pk"):
         delen.append(f"{auto['vermogen_pk']} pk")
+    if auto.get("garantie"):
+        delen.append(auto["garantie"])
     return " · ".join(delen)
 
 
