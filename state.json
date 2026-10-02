@@ -1,0 +1,71 @@
+{
+ "autos": {
+  "auto:27096-2024": {
+   "eerst_gezien": "2026-10-02",
+   "prijs": 17950,
+   "titel": "Renault Clio 1.6 E-Tech Full Hybrid 145 evolution | Navigatie |"
+  },
+  "auto:36286-2022": {
+   "eerst_gezien": "2026-10-02",
+   "prijs": 14945,
+   "titel": "Renault Clio 1.6 E-Tech Hybrid 140 Zen"
+  },
+  "auto:46513-2021": {
+   "eerst_gezien": "2026-10-02",
+   "prijs": 15448,
+   "titel": "Renault Clio 1.6 E-Tech Hybrid 140 Business Zen AVM NAVI AUTOMA"
+  },
+  "auto:48200-2021": {
+   "eerst_gezien": "2026-10-02",
+   "prijs": 17500,
+   "titel": "Renault Clio 1.6 E-Tech Hybrid 140 Intens"
+  },
+  "auto:53012-2021": {
+   "eerst_gezien": "2026-10-02",
+   "prijs": 17445,
+   "titel": "Renault Clio 1.6 E-Tech Hybrid 140 Intens, Navi | PDC V+A | 360"
+  },
+  "auto:53710-2022": {
+   "eerst_gezien": "2026-10-02",
+   "prijs": 17445,
+   "titel": "Renault Clio 1.6 E-Tech Hybrid 140 Intens NAVI/360CAM/CLIMA/LED"
+  },
+  "auto:59791-2022": {
+   "eerst_gezien": "2026-10-02",
+   "prijs": 14955,
+   "titel": "Renault Clio 1.6 E-Tech Hybrid 145pk Equilibre Navigatie | Crui"
+  },
+  "auto:59903-2021": {
+   "eerst_gezien": "2026-10-02",
+   "prijs": 17950,
+   "titel": "Renault Clio 1.6 E-Tech Hybrid 140 R.S. Line | Navigatie | Clim"
+  },
+  "auto:65581-2022": {
+   "eerst_gezien": "2026-10-02",
+   "prijs": 14900,
+   "titel": "Renault Clio 1.6 E-Tech Hybrid 140 Business Zen Slim hybride ri"
+  },
+  "auto:65652-2022": {
+   "eerst_gezien": "2026-10-02",
+   "prijs": 17495,
+   "titel": "Renault Clio E-Tech Hybrid 145 Intens | Automaat | Easy Link Mu"
+  },
+  "auto:72590-2022": {
+   "eerst_gezien": "2026-10-02",
+   "prijs": 17450,
+   "titel": "Renault Clio 1.6 E-Tech Hybrid 140 Initiale Paris | 360 camera"
+  },
+  "auto:80031-2023": {
+   "eerst_gezien": "2026-10-02",
+   "prijs": 16325,
+   "titel": "Renault Clio 1.6 E-Tech Full Hybrid 145 techno"
+  }
+ },
+ "bronnen_ooit_gelukt": [
+  "AutoScout24"
+ ],
+ "fouten": {
+  "autoscout24": 0,
+  "gaspedaal": 1
+ }
+}
