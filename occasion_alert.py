@@ -346,6 +346,11 @@ def main():
         stuur("👋 Testbericht van je occasion-alert. De verbinding werkt!")
         return
 
+    if not dry_run:
+        ontbreekt = [k for k in ("TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID") if not os.environ.get(k, "").strip()]
+        if ontbreekt:  # stop vóór het opslaan, anders gaan meldingen verloren
+            raise SystemExit(f"Secret ontbreekt: {', '.join(ontbreekt)}")
+
     cfg = json.loads(CONFIG_FILE.read_text(encoding="utf-8"))
     eerste_run = not STATE_FILE.exists()
     state = {} if eerste_run else json.loads(STATE_FILE.read_text(encoding="utf-8"))
