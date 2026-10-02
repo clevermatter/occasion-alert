@@ -1,0 +1,37 @@
+name: Occasion alert
+
+on:
+  schedule:
+    # Elk half uur tussen ca. 07:00 en 23:30 Nederlandse tijd (cron is in UTC)
+    - cron: "*/30 5-21 * * *"
+  workflow_dispatch: # handmatig starten via de knop "Run workflow"
+
+permissions:
+  contents: write # nodig om state.json terug te committen
+
+concurrency:
+  group: occasion-alert
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Zoek occasions
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python3 occasion_alert.py
+
+      - name: Bewaar wat al gemeld is
+        run: |
+          git config user.name "occasion-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add state.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Update gemelde advertenties"
+            git push
+          fi
