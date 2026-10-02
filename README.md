@@ -1,11 +1,11 @@
 # Occasion-alert
 
-Zoekt elk half uur (07:00–23:30) op **AutoScout24** en **Gaspedaal** naar een **Renault Clio E-Tech hybride tot €18.000 en maximaal 90.000 km, binnen 50 km van Venray**. Gaspedaal doorzoekt zelf meer dan 40 autosites. Je krijgt een Telegram-bericht bij:
+Zoekt elk half uur op **AutoScout24** en **viaBOVAG** naar een **Renault Clio E-Tech hybride tot €18.000 en maximaal 90.000 km, binnen 50 km van Venray**. AutoTrack gebruikt hetzelfde aanbod als AutoScout24 en is daarom niet apart nodig. Gaspedaal blokkeert de servers van GitHub en staat daarom uit. Je krijgt een Telegram-bericht bij:
 
 - 🚗 een **nieuwe auto** die aan je eisen voldoet
 - 📉 een **prijsverlaging** van een auto die je al eerder zag
 
-Staat dezelfde auto op beide sites, dan herkent de bot dat aan dezelfde kilometerstand en hetzelfde bouwjaar. Je krijgt dan één bericht met links naar beide sites. Bij de allereerste run krijg je één overzicht van alles wat er op dat moment te koop staat.
+Staat dezelfde auto op meerdere sites, dan herkent de bot dat aan dezelfde kilometerstand en hetzelfde bouwjaar. Je krijgt dan één bericht met links naar alle sites. Bij de allereerste run krijg je één overzicht van alles wat er op dat moment te koop staat.
 
 ## Installeren (± 10 minuten)
 
@@ -17,6 +17,17 @@ Staat dezelfde auto op beide sites, dan herkent de bot dat aan dezelfde kilomete
    - `TELEGRAM_BOT_TOKEN`: het token van je bot. Je kunt dezelfde bot gebruiken als voor de Marktplaats-meldingen.
    - `TELEGRAM_CHAT_ID`: je eigen chat-ID. Voor meerdere ontvangers scheid je de ID's met komma's.
 4. Ga naar het tabblad **Actions** → *Occasion alert* → **Run workflow**. Binnen een minuut krijg je het overzichtsbericht.
+
+## Timer (cron-job.org)
+
+De ingebouwde timer van GitHub slaat regelmatig runs over. Daarom start [cron-job.org](https://cron-job.org) de bot elk half uur via de GitHub-API, net als bij de Marktplaats-bots:
+
+- **URL:** `https://api.github.com/repos/clevermatter/occasion-alert/actions/workflows/occasion-alert.yml/dispatches`
+- **Methode:** `POST`
+- **Headers:** `Accept: application/vnd.github+json` en `Authorization: Bearer <je GitHub-token>`
+- **Body:** `{"ref":"main"}`
+
+Het token moet voor deze repository de rechten *Actions: Read and write* hebben. De GitHub-timer blijft als reserve aan. Dubbele runs zijn geen probleem, want de bot meldt elke auto maar één keer.
 
 ## Zoekopdracht aanpassen
 
@@ -31,10 +42,11 @@ Wijzig `config.json` (dat kan direct op GitHub met het potloodje):
 | `moet_een_van_bevatten` | Minstens één van deze woorden moet in de advertentie staan. |
 | `uitsluiten` | Advertenties met deze woorden in de titel worden overgeslagen. |
 | `autoscout24` | `merk` en `model` zoals in de URL van AutoScout24. `brandstof` `"2"` = elektro/benzine (hybride). |
-| `gaspedaal` | `pad` zoals in de URL van Gaspedaal (`renault/clio`) en een `trefwoord`. |
+| `viabovag` | `pad` en `brandstof` zoals in de URL van viaBOVAG, en de `plaats` voor de afstand. viaBOVAG kent alleen vaste filterstappen; de bot filtert daarna zelf precies op jouw grenzen. |
+| `gaspedaal` | Staat uit, omdat Gaspedaal de servers van GitHub blokkeert. |
 | `marktplaats` | Staat standaard uit. Zet `"aan": true` als je ook particuliere verkopers wilt zien. |
 
-Een andere auto zoeken, bijvoorbeeld een Toyota Yaris hybride? Pas `naam`, `titel_moet_bevatten`, de AutoScout-`merk`/`model` (`toyota`/`yaris`) en het Gaspedaal-`pad` (`toyota/yaris`) aan.
+Een andere auto zoeken, bijvoorbeeld een Toyota Yaris hybride? Pas `naam`, `titel_moet_bevatten`, de AutoScout-`merk`/`model` (`toyota`/`yaris`) en het viaBOVAG-`pad` (`merk-toyota/model-yaris`) aan.
 
 Wil je opnieuw een volledig overzicht ontvangen? Verwijder dan `state.json`.
 
