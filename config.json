@@ -1,0 +1,30 @@
+{
+  "naam": "Clio E-Tech",
+
+  "max_prijs_euro": 18000,
+  "min_prijs_euro": 3000,
+  "min_bouwjaar": null,
+  "max_kilometerstand": 90000,
+  "postcode": "5801",
+  "straal_km": 50,
+
+  "titel_moet_bevatten": ["clio"],
+  "moet_een_van_bevatten": ["e-tech", "etech", "hybrid", "hybride"],
+  "uitsluiten": ["lease", "gezocht", "schadeauto", "export", "opkoper"],
+
+  "autoscout24": {
+    "aan": true,
+    "merk": "renault",
+    "model": "clio",
+    "brandstof": "2"
+  },
+  "gaspedaal": {
+    "aan": true,
+    "pad": "renault/clio",
+    "trefwoord": "e-tech"
+  },
+  "marktplaats": {
+    "aan": false,
+    "zoektermen": ["clio e-tech", "clio hybrid"]
+  }
+}
