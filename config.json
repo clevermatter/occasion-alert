@@ -18,6 +18,12 @@
     "model": "clio",
     "brandstof": "2"
   },
+  "viabovag": {
+    "aan": true,
+    "pad": "merk-renault/model-clio",
+    "brandstof": "hybride",
+    "plaats": "venray"
+  },
   "gaspedaal": {
     "aan": false,
     "pad": "renault/clio",
