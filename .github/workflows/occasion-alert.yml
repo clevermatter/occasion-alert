@@ -4,7 +4,9 @@ on:
   schedule:
     # Elk half uur tussen ca. 07:00 en 23:30 Nederlandse tijd (cron is in UTC)
     - cron: "*/30 5-21 * * *"
-  workflow_dispatch: # handmatig starten via de knop "Run workflow"
+  # Ook te starten via de knop "Run workflow" of extern via de GitHub-API
+  # (cron-job.org), omdat de ingebouwde timer van GitHub vaak overslaat.
+  workflow_dispatch:
 
 permissions:
   contents: write # nodig om state.json terug te committen
@@ -33,5 +35,6 @@ jobs:
           git add state.json
           if ! git diff --cached --quiet; then
             git commit -m "Update gemelde advertenties"
+            git pull --rebase --quiet
             git push
           fi
