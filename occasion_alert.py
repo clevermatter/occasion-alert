@@ -55,8 +55,23 @@ def getal(waarde):
     return int(cijfers) if cijfers else None
 
 
-def advertentie(bron, id_, titel, prijs, bouwjaar, km, plaats, afstand_km, url, extra=""):
+def pk(tekst):
+    """'103 kW (140 PK)' -> 140, '1598cc, 105kW, Automaat' -> 143."""
+    tekst = str(tekst or "")
+    m = re.search(r"(\d+)\s*pk", tekst, re.I)
+    if m:
+        return int(m.group(1))
+    m = re.search(r"(\d+)\s*kw", tekst, re.I)
+    return round(int(m.group(1)) * 1.36) if m else None
+
+
+def advertentie(bron, id_, titel, prijs, bouwjaar, km, plaats, afstand_km, url, extra="",
+                versie=None, transmissie=None, vermogen_pk=None, verkoper=None):
     return {
+        "versie": " ".join((versie or "").split()) or None,
+        "transmissie": transmissie or None,
+        "vermogen_pk": vermogen_pk,
+        "verkoper": verkoper or None,
         "bron": bron,
         "id": f"{bron}:{id_}",
         "titel": " ".join((titel or "").split()),
@@ -112,6 +127,13 @@ def autoscout24(cfg):
                 loc.get("distanceToSearchLocationInKm"),
                 "https://www.autoscout24.nl" + l.get("url", ""),
                 extra=v.get("fuel", ""),
+                versie=v.get("modelVersionInput"),
+                transmissie=v.get("transmission"),
+                vermogen_pk=pk(" ".join(d.get("data", "") for d in l.get("vehicleDetails") or [])),
+                verkoper=(
+                    "Particulier" if (l.get("seller") or {}).get("type") == "Private"
+                    else (l.get("seller") or {}).get("companyName")
+                ),
             )
         )
     return ads
@@ -150,7 +172,9 @@ def gaspedaal(cfg):
         item = element.get("item", {})
         id_ = item.get("@id", "").split("#")[-1]
         offer = item.get("offers", {})
-        adres = (offer.get("seller") or {}).get("address", {})
+        verkoper = offer.get("seller") or {}
+        adres = verkoper.get("address", {})
+        naam = item.get("name") or ""
         ads.append(
             advertentie(
                 "Gaspedaal",
@@ -163,6 +187,10 @@ def gaspedaal(cfg):
                 None,
                 f"{zoek_url}#{id_}",
                 extra=item.get("fuelType", ""),
+                versie=naam.split(" - ", 1)[1] if " - " in naam else None,
+                transmissie=item.get("vehicleTransmission"),
+                vermogen_pk=pk(item.get("vehicleConfiguration")),
+                verkoper=None if verkoper.get("name") == "Onbekende dealer" else verkoper.get("name"),
             )
         )
     return ads
@@ -250,8 +278,9 @@ def voeg_samen(ads):
             autos[sleutel] = {**ad, "sleutel": sleutel, "links": {ad["bron"]: ad["url"]}}
             continue
         auto["links"].setdefault(ad["bron"], ad["url"])
-        if ad["afstand_km"] is not None and auto["afstand_km"] is None:
-            auto["afstand_km"] = ad["afstand_km"]
+        for veld in ("afstand_km", "versie", "transmissie", "vermogen_pk", "verkoper"):
+            if auto.get(veld) is None and ad.get(veld) is not None:
+                auto[veld] = ad[veld]
         if ad["prijs"] < auto["prijs"]:  # laagste prijs leidend
             auto.update(prijs=ad["prijs"], titel=ad["titel"])
     return autos
@@ -272,64 +301,86 @@ def details(auto):
     return " · ".join(delen)
 
 
+def techniek(auto):
+    delen = []
+    if auto.get("transmissie"):
+        delen.append(auto["transmissie"])
+    if auto.get("vermogen_pk"):
+        delen.append(f"{auto['vermogen_pk']} pk")
+    return " · ".join(delen)
+
+
 def plaats(auto):
     p = html.escape(auto["plaats"] or "?", quote=False)
-    return f"{p} ({auto['afstand_km']} km)" if auto["afstand_km"] is not None else p
+    if auto["afstand_km"] is not None:
+        p += f" ({auto['afstand_km']} km)"
+    if auto.get("verkoper"):
+        p += f" · {html.escape(auto['verkoper'], quote=False)}"
+    return p
 
 
 def links(auto):
     return " | ".join(f'<a href="{html.escape(u)}">{b}</a>' for b, u in auto["links"].items())
 
 
+def kop(auto):
+    """Merk/model + uitvoering, bv. 'Renault Clio 1.6 E-Tech Hybrid 140 Intens'."""
+    return html.escape(auto["titel"], quote=False)
+
+
+def regels(auto):
+    r = [f"💶 {details(auto)}"]
+    if techniek(auto):
+        r.append(f"⚙️ {techniek(auto)}")
+    r.append(f"📍 {plaats(auto)}")
+    r.append(f"🔗 {links(auto)}")
+    return "\n".join(r)
+
+
 def bericht_nieuw(auto, naam):
-    return (
-        f"🚗 <b>Nieuwe {html.escape(naam)}</b>\n"
-        f"{html.escape(auto['titel'], quote=False)}\n"
-        f"💶 {details(auto)}\n"
-        f"📍 {plaats(auto)}\n"
-        f"🔗 {links(auto)}"
-    )
+    return f"🚗 <b>Nieuwe {html.escape(naam)}</b>\n<b>{kop(auto)}</b>\n{regels(auto)}"
 
 
 def bericht_prijsdaling(auto, oude_prijs):
     return (
-        f"📉 <b>Prijs verlaagd met {euro(oude_prijs - auto['prijs'])}</b>\n"
-        f"{html.escape(auto['titel'], quote=False)}\n"
-        f"💶 <s>{euro(oude_prijs)}</s> → <b>{details(auto)}</b>\n"
-        f"📍 {plaats(auto)}\n"
-        f"🔗 {links(auto)}"
+        f"📉 <b>Prijs verlaagd met {euro(oude_prijs - auto['prijs'])}</b> (was {euro(oude_prijs)})\n"
+        f"<b>{kop(auto)}</b>\n{regels(auto)}"
     )
 
 
 def berichten_overzicht(autos, naam, bronnen):
-    kop = (
+    kopregel = (
         f"✅ <b>Occasion-alert actief: {html.escape(naam)}</b>\n"
         f"Bronnen: {', '.join(bronnen)}\n"
-        f"Nu {len(autos)} auto('s) te koop. Vanaf nu meld ik alleen nieuwe "
-        f"advertenties en prijsdalingen.\n"
+        f"Nu {len(autos)} auto('s) te koop, van goedkoop naar duur. Vanaf nu meld ik "
+        f"alleen nieuwe advertenties en prijsdalingen.\n"
     )
-    regels = [
-        f"• {details(a)} — {plaats(a)} — {links(a)}"
-        for a in sorted(autos, key=lambda a: a["prijs"])
-    ]
-    berichten, huidig = [], kop
-    for r in regels:
-        if len(huidig) + len(r) > 4000:
+    blokken = []
+    for a in sorted(autos, key=lambda a: a["prijs"]):
+        regel2 = details(a) + (f" · {techniek(a)}" if techniek(a) else "")
+        blokken.append(
+            f"<b>{html.escape(a.get('versie') or a['titel'], quote=False)}</b>\n"
+            f"{regel2}\n"
+            f"📍 {plaats(a)} — {links(a)}"
+        )
+    berichten, huidig = [], kopregel
+    for b in blokken:
+        if len(huidig) + len(b) > 3900:
             berichten.append(huidig)
             huidig = ""
-        huidig += "\n" + r
+        huidig += "\n" + b + "\n"
     berichten.append(huidig)
     return berichten
 
 
-def stuur(tekst, dry_run=False):
+def stuur(tekst, dry_run=False, preview=False):
     if dry_run:
         print("----- [dry-run] -----\n" + tekst)
         return
     token = os.environ["TELEGRAM_BOT_TOKEN"]
     for chat_id in [c.strip() for c in os.environ["TELEGRAM_CHAT_ID"].split(",") if c.strip()]:
         body = urllib.parse.urlencode(
-            {"chat_id": chat_id, "text": tekst, "parse_mode": "HTML", "disable_web_page_preview": "true"}
+            {"chat_id": chat_id, "text": tekst, "parse_mode": "HTML", "disable_web_page_preview": "false" if preview else "true"}
         ).encode()
         req = urllib.request.Request(f"https://api.telegram.org/bot{token}/sendMessage", data=body)
         with urllib.request.urlopen(req, timeout=30) as resp:
@@ -397,9 +448,9 @@ def main():
             bekend = gezien.get(auto["sleutel"])
             if bekend is None:
                 if not set(auto["links"]) <= stil:
-                    stuur(bericht_nieuw(auto, cfg["naam"]), dry_run)
+                    stuur(bericht_nieuw(auto, cfg["naam"]), dry_run, preview=True)
             elif auto["prijs"] < bekend["prijs"]:
-                stuur(bericht_prijsdaling(auto, bekend["prijs"]), dry_run)
+                stuur(bericht_prijsdaling(auto, bekend["prijs"]), dry_run, preview=True)
 
     vandaag = date.today().isoformat()
     for auto in autos.values():
