@@ -20,10 +20,20 @@
    "prijs": 17500,
    "titel": "Renault Clio 1.6 E-Tech Hybrid 140 Intens"
   },
+  "auto:49647-2022": {
+   "eerst_gezien": "2026-10-02",
+   "prijs": 17890,
+   "titel": "Renault Clio 1.6 E-Tech Hybrid 140 Intens Airco ECC Carplay Navi Cruise Control PDC VA + 360 Camera Full LED 16\" LM Velgen"
+  },
   "auto:53012-2021": {
    "eerst_gezien": "2026-10-02",
    "prijs": 17445,
    "titel": "Renault Clio 1.6 E-Tech Hybrid 140 Intens, Navi | PDC V+A | 360"
+  },
+  "auto:53365-2022": {
+   "eerst_gezien": "2026-10-02",
+   "prijs": 16995,
+   "titel": "Renault Clio 1.6 E-Tech Hybrid 140 R.S. Line *t/m 10de bouwjaar garantie!"
   },
   "auto:53710-2022": {
    "eerst_gezien": "2026-10-02",
@@ -62,9 +72,11 @@
   }
  },
  "bronnen_ooit_gelukt": [
-  "AutoScout24"
+  "AutoScout24",
+  "viaBOVAG"
  ],
  "fouten": {
-  "autoscout24": 0
+  "autoscout24": 0,
+  "viabovag": 0
  }
 }
