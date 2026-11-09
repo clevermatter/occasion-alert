@@ -88,7 +88,7 @@
   "auto:61157-2023": {
    "eerst_gezien": "2026-10-20",
    "prijs": 17695,
-   "titel": "Renault Clio 1.6 E-Tech Hybrid 145pk Aut. Evolution | Navi | Ca"
+   "titel": "Renault Clio 1.6 E-Tech Hybrid 145pk Aut. Evolution | Navi | CarPlay | Led Koplampen | Extra Getint Glas | DAB+ Radio |"
   },
   "auto:61523-2021": {
    "eerst_gezien": "2026-10-08",
@@ -128,7 +128,7 @@
   "auto:79664-2022": {
    "eerst_gezien": "2026-10-12",
    "prijs": 15600,
-   "titel": "Renault Clio 1.6 E-Tech Hybrid 145 Equilibre | Apple CarPlay /"
+   "titel": "Renault Clio 1.6 E-Tech Hybrid 145 Equilibre | Apple CarPlay / Android Auto | Cruise Control | Parkeersensoren | DAB+ |"
   },
   "auto:80031-2023": {
    "eerst_gezien": "2026-10-02",
@@ -151,7 +151,7 @@
   "viaBOVAG"
  ],
  "fouten": {
-  "autoscout24": 0,
+  "autoscout24": 1,
   "viabovag": 0
  }
 }
